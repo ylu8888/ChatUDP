@@ -31,53 +31,51 @@ class Server:
         #print("Server is now listening on port: ", self.server_port)
 
         while True:
-            try:
-                data, addr = self.sock.recvfrom(1024) #get the msg from the client
-                self.handle_client(data, addr) #process whatever client wants
-            except:
-                print("Error")
+            data, addr = self.sock.recvfrom(1024) #get the msg from the client
+            self.handle_client(data, addr) #process whatever client wants
+            
 
         #raise NotImplementedError # remove it once u start your implementation
 
     def handle_client(self, data, addr):
-        try:
-            msg_type, segno, dec_data, checksum = util.parse_packet(data.decode())
-            data_split = dec_data.split()
+        
+        msg_type, segno, dec_data, checksum = util.parse_packet(data.decode())
+        data_split = dec_data.split()
 
-            command = data_split[0].lower() #first input split 
+        command = data_split[0].lower() #first input split 
 
-            if(command == "join"):
-                #print("we are join")
-                #print(data_split)
-                #print(data_split[2])
-                
-                self.join(data_split, addr)
-
-            elif(command == "disconnect"):
-                #print("we are disconnect")
-               # print(data_split)
+        if(command == "join"):
+            #print("we are join")
+            #print(data_split)
+            #print(data_split[2])
             
-                self.disc(data_split, addr)
+            self.join(data_split, addr)
 
-            elif(command == "request_users_list"):
-                #print("we are req user list")
-                #print(data_split)
-                self.send_list(addr)
+        elif(command == "disconnect"):
+            #print("we are disconnect")
+            # print(data_split)
+        
+            self.disc(data_split, addr)
 
-            elif(command == "send_message"):
-                print("we are sendmsg")
-                print(data_split)
-                self.send_msg(data_split, addr)
+        elif(command == "request_users_list"):
+            #print("we are req user list")
+            #print(data_split)
+            self.send_list(addr)
 
-            else:
-                err_msg = util.make_message("err_unknown_message", 1)
-                err_pkt = util.make_packet("data", 0, err_msg)
-                self.sock.sendto(err_pkt.encode(), addr)
+        elif(command == "send_message"):
+            #print("we are sendmsg")
+            #print('no split', dec_data)
+            #print(data_split)
+            self.send_msg(dec_data, data_split, addr)
 
-                print("disconnected: server received an unknown command")
+        else:
+            err_msg = util.make_message("err_unknown_message", 1)
+            err_pkt = util.make_packet("data", 0, err_msg)
+            self.sock.sendto(err_pkt.encode(), addr)
 
-        except:
-            print("Error")
+            print("disconnected: server received an unknown command")
+
+        
     
     def join(self, data_split, addr): #for new client trying ti join
         user = data_split[2] #this is the username
@@ -109,15 +107,49 @@ class Server:
 
         for user,myAddr in self.client_dict.items():    #loop thru the tuples in the client dict
             if addr == myAddr:  #if the addresses match
-                print('request_users_list:', user)  #then print the user who requested the LIST
+                print('request_users_list:',user)  #then print the user who requested the LIST
                 break
 
         list_msg = util.make_message("response_users_list", 3, users_list)   #return msg to the client
         list_pkt = util.make_packet("data", 0, list_msg)
         self.sock.sendto(list_pkt.encode(), addr)
 
-    def send_msg(self, data_split, addr):
-        print("still working")
+    def send_msg(self, dec_data, data_split, addr):
+        user = data_split[2]    #this is the user
+        print("msg:", user)
+
+        #this is dec data #send_message 63 ady ['msg', '2', 'ady', 'bib', 'hello', 'my', 'frog', 'friend']
+        
+        start_index = dec_data.find('[')    #extract the array out
+        end_index = dec_data.find(']')
+
+        array_str = dec_data[start_index:end_index+1]    #only care ab thte array
+        msg_arr = eval(array_str)
+        #print('le real msg_arr', msg_arr)
+       
+        x = 2 #this is where user starts
+        user_len = msg_arr[1] #this is how many users are being sent a mesage
+        #print('this is the user-len', user_len)
+        for i in range(int(user_len)): #loop from i to # of users who is being sent a message
+            msged_user = msg_arr[x] #this is the user who is receiving the message
+
+            if(msged_user not in self.client_dict):
+                print("msg: {user} to non-existent user {msged_user}")
+
+            else:
+                user_addr = self.client_dict[msged_user]
+                x += 1
+                actual_msg = " ".join(msg_arr[(2 + int(user_len)):])#this is the actual message being sent
+
+                #print('this the message', actual_msg)
+
+                return_arr = ["", ""]
+                return_arr[0] = user
+                return_arr[1] = actual_msg
+                
+                sent_msg = util.make_message("forward_message", 4, return_arr)   #send the message to all the useres in for loop!
+                sent_pkt = util.make_packet("data", 0, sent_msg)
+                self.sock.sendto(sent_pkt.encode(), user_addr)
 
 
 # Do not change below part of code
