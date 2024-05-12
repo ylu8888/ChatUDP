@@ -69,11 +69,12 @@ class Server:
             self.send_msg(dec_data, data_split, addr)
 
         else:
-            err_msg = util.make_message("err_unknown_message", 1)
+            err_msg = util.make_message("err_unknown_message", 2)
             err_pkt = util.make_packet("data", 0, err_msg)
             self.sock.sendto(err_pkt.encode(), addr)
 
-            print("disconnected: server received an unknown command")
+            user = data_split[2] #this is the username
+            print(f"disconnected: {user} sent unknown command")
 
         
     
@@ -84,6 +85,8 @@ class Server:
             err_msg = util.make_message("err_server_full", 2)
             err_pkt = util.make_packet("data", 0, err_msg)
             self.sock.sendto(err_pkt.encode(), addr)
+
+            print("disconnected: server full")
 
         elif(user in self.client_dict): #if the user is already in our client dict throw error
             err_msg = util.make_message("err_username_unavailable", 2)
@@ -134,7 +137,7 @@ class Server:
             msged_user = msg_arr[x] #this is the user who is receiving the message
 
             if(msged_user not in self.client_dict):
-                print("msg: {user} to non-existent user {msged_user}")
+                print(f"msg: {user} to non-existent user {msged_user}")
 
             else:
                 user_addr = self.client_dict[msged_user]
