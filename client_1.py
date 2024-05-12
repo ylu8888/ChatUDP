@@ -29,6 +29,18 @@ class Client:
         self.sock.bind(('', random.randint(10000, 40000)))
         self.name = username
 
+    
+    #cleint is added to server when join req
+    #use dict to map clients to addrs
+    #when serv full it should be clients.size() >= util.max_num_clients
+    #disconnect the client when he does quit, unknwon msg, serverfull, and username unavailable
+    #keep seq number at 0 for all of part 1
+    #when u do make packet the first parameter should be "data"
+    #do the split("|") to decode the original message in the packet the server receives 
+
+
+    #when u do sock.recv from the server side you can get the address
+
     def start(self):
         '''
         Main Loop is here
@@ -36,6 +48,19 @@ class Client:
         Use make_message() and make_util() functions from util.py to make your first join packet
         Waits for userinput and then process it
         '''
+
+        self.send_join()
+
+        while True:
+            try:
+                user_input = input() #receive input from user thru command line
+
+                self.process_input(self, user_input) #process whatever command the user does
+
+            except KeyboardInterrupt:
+                self.quit()
+                sys.exit()
+
         #raise NotImplementedError # remove it once u start your implementation
             
 
@@ -43,8 +68,115 @@ class Client:
         '''
         Waits for a message from server and process it accordingly
         '''
+
+        while True:
+            try:
+                res_data, addr = self.sock.recvfrom(1024)
+                msg_type, segno, dec_data, checksum = util.parse_packet(res_data.decode())
+
+                data = dec_data.split() #split the server res data into array
+
+                command = data[0].lower() #this is the msg / first input of split data
+
+                if(command == "response_users_list"):
+                    users_list = data[2:]
+                    print("list:", " ".join(users_list))
+
+                elif(command == "forward_message"): 
+                    msg_data = data[3:]
+                    msg = msg_data[0]
+                    sender = msg_data[1]
+                    real_msg = data[2:]
+                    print(f"{msg} {sender}", " ".join(real_msg))
+                
+                elif(command == "err_unknown_message"): #if we get an error, print it and quit
+                    print("disconnected: server received an unknown command")
+                    self.quit()
+                    sys.exit()
+
+                elif(command == "err_server_full"):
+                    print("disconnected: server full")
+                    self.quit()
+                    sys.exit()
+
+                elif(command == "err_username_unavailable"):
+                    print("disconnected: username not available")
+                    self.quit()
+                    sys.exit()
+                
+                else: #some type of error happened
+                    self.quit()
+                    sys.exit()
+
+
+            except: #some type of error happens
+                print("error")
+                self.quit()
+                sys.exit()
         #raise NotImplementedError # remove it once u start your implementation
 
+    def send_join(self): #send a join message to server
+        join_message = util.make_message("join", 1, self.name)
+        my_packet = util.make_packet("data", 0, join_message)
+        self.sock.sendto(my_packet.encode(), (self.server_addr, self.server_port))
+
+    def process_input(self, user_input):
+        input = user_input.split()   #split the input into an array for simplicity
+
+        command = input[0].lower() # this is the first command, changed to lower case
+
+        if(command == "quit"): 
+            self.quit()
+            print("quitting")
+            sys.exit()
+
+        elif(command == "list"):
+            self.list()
+        
+        elif(command == "help"):
+            self.help()
+        
+        elif(command == "msg"):
+            self.send_msg(input)
+
+        else:   #if the command is not any of the above
+            print("Incorrect user input format")
+            self.quit()
+            sys.exit()
+
+    def quit(self): #send a message to the server and tell him that a client is quitting, so remove client frm dict
+        quit_message = util.make_message("disconnect", 1, self.name)
+        quit_packet = util.make_packet("data", 0, quit_message) 
+
+        self.sock.sendto(quit_packet.encode(), (self.server_addr, self.server_port))
+
+    def list(self): #send msg to server asking to request list of all the usernames of clients, names must be in ascending order
+        list_message = util.make_message("request_users_list", 2, self.name)
+        list_packet = util.make_packet("data", 0, list_message) 
+
+        self.sock.sendto(list_packet.encode(), (self.server_addr, self.server_port))
+    
+    def help(self): #prints all possible user inputs and the format input
+        print("All the user inputs and the format input:")
+        print("Message: msg <number_of_users> <username1> <username2> … <message>")
+        print("Available Users: list")
+        print("Help: help")
+        print("Quit: quit")
+
+
+    def send_msg(self, input):  #client sends msg to server
+        msg_message = util.make_message("send_message", 4, f"{self.name} {input}")
+        msg_packet = util.make_packet("data", 0, msg_message) 
+
+        self.sock.sendto(msg_packet.encode(), (self.server_addr, self.server_port))
+
+
+#part 2
+#send a start packet, once thats ACKED, 
+#then sent a data packet with join quit whatever query
+#once thats acked
+#send an END
+#and keep doing that on repeat
 
 
 # Do not change below part of code
