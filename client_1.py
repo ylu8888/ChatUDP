@@ -84,11 +84,17 @@ class Client:
                     print("list:", " ".join(sorted_users))
 
                 elif(command == "forward_message"): 
-                    msg_data = data[3:]
-                    msg = msg_data[0]
-                    sender = msg_data[1]
-                    real_msg = data[2:]
-                    print(f"{msg} {sender}", " ".join(real_msg))
+                    #print('this the dec data', dec_data) # forward_message 2 ['ady', 'hello my frog friend']
+                    #print('this the split data', data)
+
+                    start_index = dec_data.find('[')    #extract the array out
+                    end_index = dec_data.find(']')
+
+                    array_str = dec_data[start_index:end_index+1]    #only care ab thte array
+                    msg_arr = eval(array_str)
+
+                    print(f"msg: {msg_arr[0]}: {msg_arr[1]}")
+                    
                 
                 elif(command == "err_unknown_message"): #if we get an error, print it and quit
                     print("disconnected: server received an unknown command")
