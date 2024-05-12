@@ -29,17 +29,6 @@ class Client:
         self.sock.bind(('', random.randint(10000, 40000)))
         self.name = username
 
-    
-    #cleint is added to server when join req
-    #use dict to map clients to addrs
-    #when serv full it should be clients.size() >= util.max_num_clients
-    #disconnect the client when he does quit, unknwon msg, serverfull, and username unavailable
-    #keep seq number at 0 for all of part 1
-    #when u do make packet the first parameter should be "data"
-    #do the split("|") to decode the original message in the packet the server receives 
-
-
-    #when u do sock.recv from the server side you can get the address
 
     def start(self):
         '''
@@ -58,10 +47,6 @@ class Client:
             self.process_input(user_input) #process whatever command the user does
 
             # except (KeyboardInterrupt): #if user hits ctrl C or something
-            
-            #     sys.exit()
-
-        #raise NotImplementedError # remove it once u start your implementation
             
 
     def receive_handler(self):
@@ -84,14 +69,12 @@ class Client:
                 print("list:", " ".join(sorted_users))
 
             elif(command == "forward_message"): 
-                #print('this the dec data', dec_data) # forward_message 2 ['ady', 'hello my frog friend']
-                #print('this the split data', data)
-
-                start_index = dec_data.find('[')    #extract the array out
+                 #forward_message 2 ['ady', 'hello my frog friend']
+                start_index = dec_data.find('[')    #find indices of arr brackets
                 end_index = dec_data.find(']')
 
-                array_str = dec_data[start_index:end_index+1]    #only care ab thte array
-                msg_arr = eval(array_str)
+                array_str = dec_data[start_index: end_index+1]    #extract the array out
+                msg_arr = eval(array_str) #convert to an array
 
                 print(f"msg: {msg_arr[0]}: {msg_arr[1]}")
                 
@@ -99,33 +82,15 @@ class Client:
             elif(command == "err_unknown_message"): #if we get an error, print it and quit
                 self.sock.close()
                 print("disconnected: server received an unknown command")
-               
-                
-                #sys.exit()
 
-            elif(command == "err_server_full"):
+            elif(command == "err_server_full"): #server hit the max num of clients
                 self.sock.close()
                 print("disconnected: server full")
                
-                #sys.exit()
-                
-                
-
-            elif(command == "err_username_unavailable"):
+            elif(command == "err_username_unavailable"):  #duplicate usernames error
                 self.sock.close()
                 print("disconnected: username not available")
                
-                #sys.exit()
-            
-            # else: #some type of error happened
-            #    
-            #     sys.exit()
-
-
-            # except: #some type of error happens
-            #   
-            #     sys.exit()
-        #raise NotImplementedError # remove it once u start your implementation
 
     def send_join(self): #send a join message to server
         join_message = util.make_message("join", 1, self.name)
@@ -153,8 +118,7 @@ class Client:
 
         else:   #if the command is not any of the above
             print("incorrect userinput format")
-           
-            # sys.exit()
+
 
     def quit(self): #send a message to the server and tell him that a client is quitting, so remove client frm dict
         quit_message = util.make_message("disconnect", 1, self.name)
@@ -181,15 +145,6 @@ class Client:
         msg_packet = util.make_packet("data", 0, msg_message) 
 
         self.sock.sendto(msg_packet.encode(), (self.server_addr, self.server_port))
-
-
-#part 2
-#send a start packet, once thats ACKED, 
-#then sent a data packet with join quit whatever query
-#once thats acked
-#send an END
-#and keep doing that on repeat
-
 
 # Do not change below part of code
 if __name__ == "__main__":
