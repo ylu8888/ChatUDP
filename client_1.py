@@ -52,14 +52,14 @@ class Client:
         self.send_join()
 
         while True:
-            try:
-                user_input = input() #receive input from user thru command line
+            
+            user_input = input() #receive input from user thru command line
 
-                self.process_input(user_input) #process whatever command the user does
+            self.process_input(user_input) #process whatever command the user does
 
-            except (KeyboardInterrupt):
-                self.quit()
-                sys.exit()
+            # except (KeyboardInterrupt): #if user hits ctrl C or something
+            #     self.quit()
+            #     sys.exit()
 
         #raise NotImplementedError # remove it once u start your implementation
             
@@ -70,59 +70,61 @@ class Client:
         '''
 
         while True:
-            try:
-                res_data, addr = self.sock.recvfrom(1024)
-                msg_type, seqno, dec_data, checksum = util.parse_packet(res_data.decode())
+            
+            res_data, addr = self.sock.recvfrom(1024)
+            msg_type, seqno, dec_data, checksum = util.parse_packet(res_data.decode())
 
-                data = dec_data.split() #split the server res data into array
+            data = dec_data.split() #split the server res data into array
 
-                command = data[0].lower() #this is the msg / first input of split data
+            command = data[0].lower() #this is the msg / first input of split data
 
-                if(command == "response_users_list"):
-                    users_list = data[2:]
-                    sorted_users = sorted(users_list)
-                    print("list:", " ".join(sorted_users))
+            if(command == "response_users_list"):
+                users_list = data[2:]
+                sorted_users = sorted(users_list) # need to sort in alphabetical order the users
+                print("list:", " ".join(sorted_users))
 
-                elif(command == "forward_message"): 
-                    #print('this the dec data', dec_data) # forward_message 2 ['ady', 'hello my frog friend']
-                    #print('this the split data', data)
+            elif(command == "forward_message"): 
+                #print('this the dec data', dec_data) # forward_message 2 ['ady', 'hello my frog friend']
+                #print('this the split data', data)
 
-                    start_index = dec_data.find('[')    #extract the array out
-                    end_index = dec_data.find(']')
+                start_index = dec_data.find('[')    #extract the array out
+                end_index = dec_data.find(']')
 
-                    array_str = dec_data[start_index:end_index+1]    #only care ab thte array
-                    msg_arr = eval(array_str)
+                array_str = dec_data[start_index:end_index+1]    #only care ab thte array
+                msg_arr = eval(array_str)
 
-                    print(f"msg: {msg_arr[0]}: {msg_arr[1]}")
-                    
+                print(f"msg: {msg_arr[0]}: {msg_arr[1]}")
                 
-                elif(command == "err_unknown_message"): #if we get an error, print it and quit
-                    print("disconnected: server received an unknown command")
-                    self.quit()
-                    #self.sock.close()
-                    sys.exit()
-
-                elif(command == "err_server_full"):
-                    print("disconnected: server full")
-                    self.quit()
-                    sys.exit()
-                    #self.sock.close()
-                    
-
-                elif(command == "err_username_unavailable"):
-                    print("disconnected: username not available")
-                    #self.quit()
-                    #self.sock.close()
-                    sys.exit()
-                
-                else: #some type of error happened
-                    #self.quit()
-                    sys.exit()
-
-
-            except: #some type of error happens
+            
+            elif(command == "err_unknown_message"): #if we get an error, print it and quit
+                self.sock.close()
+                print("disconnected: server received an unknown command")
                 #self.quit()
-                sys.exit()
+                
+                #sys.exit()
+
+            elif(command == "err_server_full"):
+                self.sock.close()
+                print("disconnected: server full")
+                #self.quit()
+                #sys.exit()
+                
+                
+
+            elif(command == "err_username_unavailable"):
+                self.sock.close()
+                print("disconnected: username not available")
+                #self.quit()
+                #sys.exit()
+            
+            # else: #some type of error happened
+            #     #self.quit()
+            #     sys.exit()
+
+
+            # except: #some type of error happens
+            #     #self.quit()
+            #     sys.exit()
         #raise NotImplementedError # remove it once u start your implementation
 
     def send_join(self): #send a join message to server
@@ -151,8 +153,8 @@ class Client:
 
         else:   #if the command is not any of the above
             print("Incorrect user input format")
-            self.quit()
-            sys.exit()
+            # self.quit()
+            # sys.exit()
 
     def quit(self): #send a message to the server and tell him that a client is quitting, so remove client frm dict
         quit_message = util.make_message("disconnect", 1, self.name)
