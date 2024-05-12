@@ -58,7 +58,7 @@ class Client:
             self.process_input(user_input) #process whatever command the user does
 
             # except (KeyboardInterrupt): #if user hits ctrl C or something
-            #     self.quit()
+            
             #     sys.exit()
 
         #raise NotImplementedError # remove it once u start your implementation
@@ -99,14 +99,14 @@ class Client:
             elif(command == "err_unknown_message"): #if we get an error, print it and quit
                 self.sock.close()
                 print("disconnected: server received an unknown command")
-                #self.quit()
+               
                 
                 #sys.exit()
 
             elif(command == "err_server_full"):
                 self.sock.close()
                 print("disconnected: server full")
-                #self.quit()
+               
                 #sys.exit()
                 
                 
@@ -114,16 +114,16 @@ class Client:
             elif(command == "err_username_unavailable"):
                 self.sock.close()
                 print("disconnected: username not available")
-                #self.quit()
+               
                 #sys.exit()
             
             # else: #some type of error happened
-            #     #self.quit()
+            #    
             #     sys.exit()
 
 
             # except: #some type of error happens
-            #     #self.quit()
+            #   
             #     sys.exit()
         #raise NotImplementedError # remove it once u start your implementation
 
@@ -152,8 +152,8 @@ class Client:
             self.send_msg(input)
 
         else:   #if the command is not any of the above
-            print("Incorrect user input format")
-            # self.quit()
+            print("incorrect userinput format")
+           
             # sys.exit()
 
     def quit(self): #send a message to the server and tell him that a client is quitting, so remove client frm dict
