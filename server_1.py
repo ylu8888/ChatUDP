@@ -35,40 +35,26 @@ class Server:
             self.handle_client(data, addr) #process whatever client wants
             
 
-        #raise NotImplementedError # remove it once u start your implementation
-
     def handle_client(self, data, addr):
         
-        msg_type, segno, dec_data, checksum = util.parse_packet(data.decode())
+        msg_type, seqno, dec_data, checksum = util.parse_packet(data.decode())
         data_split = dec_data.split()
 
-        command = data_split[0].lower() #first input split 
+        command = data_split[0].lower() #first input argument is the command
 
-        if(command == "join"):
-            #print("we are join")
-            #print(data_split)
-            #print(data_split[2])
-            
+        if(command == "join"):  
             self.join(data_split, addr)
 
         elif(command == "disconnect"):
-            #print("we are disconnect")
-            # print(data_split)
-        
             self.disc(data_split, addr)
 
         elif(command == "request_users_list"):
-            #print("we are req user list")
-            #print(data_split)
             self.send_list(addr)
 
         elif(command == "send_message"):
-            #print("we are sendmsg")
-            #print('no split', dec_data)
-            #print(data_split)
             self.send_msg(dec_data, data_split, addr)
 
-        else:
+        else:   #if the command is invalid
             err_msg = util.make_message("err_unknown_message", 2)
             err_pkt = util.make_packet("data", 0, err_msg)
             self.sock.sendto(err_pkt.encode(), addr)
@@ -104,9 +90,9 @@ class Server:
         del self.client_dict[user] #remove the client user from the dict
         print("disconnected:", user)
     
-    def send_list(self, addr):
+    def send_list(self, addr): #sending the list of users
         keys = self.client_dict.keys()  #gets all the usernames
-        users_list = " ".join(keys) #adds space between
+        users_list = " ".join(keys) #adds space between the users in list
 
         for user,myAddr in self.client_dict.items():    #loop thru the tuples in the client dict
             if addr == myAddr:  #if the addresses match
@@ -127,7 +113,7 @@ class Server:
         end_index = dec_data.find(']')
 
         array_str = dec_data[start_index:end_index+1]    #only care ab thte array
-        msg_arr = eval(array_str)
+        msg_arr = eval(array_str)   #convert to array
         #print('le real msg_arr', msg_arr)
        
         x = 2 #this is where user starts
@@ -135,18 +121,18 @@ class Server:
         #print('this is the user-len', user_len)
         for i in range(int(user_len)): #loop from i to # of users who is being sent a message
             msged_user = msg_arr[x] #this is the user who is receiving the message
+            x += 1
 
             if(msged_user not in self.client_dict):
                 print(f"msg: {user} to non-existent user {msged_user}")
 
             else:
                 user_addr = self.client_dict[msged_user]
-                x += 1
                 actual_msg = " ".join(msg_arr[(2 + int(user_len)):])#this is the actual message being sent
 
                 #print('this the message', actual_msg)
 
-                return_arr = ["", ""]
+                return_arr = ["", ""]   #response msg will look like ["ady", "hello my friend"]
                 return_arr[0] = user
                 return_arr[1] = actual_msg
                 
