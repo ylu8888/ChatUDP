@@ -55,9 +55,9 @@ class Client:
             try:
                 user_input = input() #receive input from user thru command line
 
-                self.process_input(self, user_input) #process whatever command the user does
+                self.process_input(user_input) #process whatever command the user does
 
-            except KeyboardInterrupt:
+            except (KeyboardInterrupt):
                 self.quit()
                 sys.exit()
 
@@ -72,7 +72,7 @@ class Client:
         while True:
             try:
                 res_data, addr = self.sock.recvfrom(1024)
-                msg_type, segno, dec_data, checksum = util.parse_packet(res_data.decode())
+                msg_type, seqno, dec_data, checksum = util.parse_packet(res_data.decode())
 
                 data = dec_data.split() #split the server res data into array
 
@@ -80,7 +80,8 @@ class Client:
 
                 if(command == "response_users_list"):
                     users_list = data[2:]
-                    print("list:", " ".join(users_list))
+                    sorted_users = sorted(users_list)
+                    print("list:", " ".join(sorted_users))
 
                 elif(command == "forward_message"): 
                     msg_data = data[3:]
@@ -92,26 +93,29 @@ class Client:
                 elif(command == "err_unknown_message"): #if we get an error, print it and quit
                     print("disconnected: server received an unknown command")
                     self.quit()
+                    #self.sock.close()
                     sys.exit()
 
                 elif(command == "err_server_full"):
                     print("disconnected: server full")
                     self.quit()
                     sys.exit()
+                    #self.sock.close()
+                    
 
                 elif(command == "err_username_unavailable"):
                     print("disconnected: username not available")
-                    self.quit()
+                    #self.quit()
+                    #self.sock.close()
                     sys.exit()
                 
                 else: #some type of error happened
-                    self.quit()
+                    #self.quit()
                     sys.exit()
 
 
             except: #some type of error happens
-                print("error")
-                self.quit()
+                #self.quit()
                 sys.exit()
         #raise NotImplementedError # remove it once u start your implementation
 
@@ -120,7 +124,7 @@ class Client:
         my_packet = util.make_packet("data", 0, join_message)
         self.sock.sendto(my_packet.encode(), (self.server_addr, self.server_port))
 
-    def process_input(self, user_input):
+    def process_input(self, user_input): #handle whatever commands the client wants quit, list help, msg
         input = user_input.split()   #split the input into an array for simplicity
 
         command = input[0].lower() # this is the first command, changed to lower case
